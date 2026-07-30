@@ -1,0 +1,1 @@
+export const SuccessState = () => null

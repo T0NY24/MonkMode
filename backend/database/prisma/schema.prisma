@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model usuarios {
+  id            String           @id @default(uuid()) @db.Uuid
+  email         String           @unique @db.VarChar(255)
+  password_hash String           @db.Text
+  nombre        String           @db.VarChar(255)
+  is_activo     Boolean          @default(true)
+  created_at    DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime         @updatedAt @db.Timestamptz(6)
+  deleted_at    DateTime?        @db.Timestamptz(6)
+  pedidos       pedidos[]
+  usuariosRoles usuarios_roles[]
+}
+
+model roles {
+  id            String           @id @default(uuid()) @db.Uuid
+  nombre        String           @unique @db.VarChar(100)
+  descripcion   String?          @db.Text
+  created_at    DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime         @updatedAt @db.Timestamptz(6)
+  deleted_at    DateTime?        @db.Timestamptz(6)
+  usuariosRoles usuarios_roles[]
+  rolesPermisos roles_permisos[]
+}
+
+model usuarios_roles {
+  usuario_id String   @db.Uuid
+  rol_id     String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  usuario usuarios @relation(fields: [usuario_id], references: [id])
+  rol     roles    @relation(fields: [rol_id], references: [id])
+
+  @@id([usuario_id, rol_id])
+}
+
+model permisos {
+  id            String           @id @default(uuid()) @db.Uuid
+  codigo        String           @unique @db.VarChar(100)
+  descripcion   String?          @db.Text
+  created_at    DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime         @updatedAt @db.Timestamptz(6)
+  deleted_at    DateTime?        @db.Timestamptz(6)
+  rolesPermisos roles_permisos[]
+}
+
+model roles_permisos {
+  rol_id      String   @db.Uuid
+  permiso_id  String   @db.Uuid
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  rol     roles    @relation(fields: [rol_id], references: [id])
+  permiso permisos @relation(fields: [permiso_id], references: [id])
+
+  @@id([rol_id, permiso_id])
+}
+
+model productos {
+  id                 String              @id @default(uuid()) @db.Uuid
+  nombre             String              @db.VarChar(255)
+  descripcion        String?             @db.Text
+  precio             Decimal             @db.Decimal(10, 2)
+  stock              Int                 @default(0)
+  is_activo          Boolean             @default(true)
+  metadata           Json?
+  created_at         DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime            @updatedAt @db.Timestamptz(6)
+  deleted_at         DateTime?           @db.Timestamptz(6)
+  pedidosProductos   pedidos_productos[]
+}
+
+model pedidos {
+  id               String              @id @default(uuid()) @db.Uuid
+  usuario_id       String              @db.Uuid
+  estado           String              @default("pendiente") @db.VarChar(50)
+  total            Decimal             @db.Decimal(10, 2)
+  created_at       DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime            @updatedAt @db.Timestamptz(6)
+  deleted_at       DateTime?           @db.Timestamptz(6)
+  usuario          usuarios            @relation(fields: [usuario_id], references: [id])
+  pedidosProductos pedidos_productos[]
+}
+
+model pedidos_productos {
+  pedido_id    String   @db.Uuid
+  producto_id  String   @db.Uuid
+  cantidad     Int      @default(1)
+  precio       Decimal  @db.Decimal(10, 2)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  pedido   pedidos   @relation(fields: [pedido_id], references: [id])
+  producto productos @relation(fields: [producto_id], references: [id])
+
+  @@id([pedido_id, producto_id])
+}
